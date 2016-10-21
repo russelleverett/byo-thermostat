@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <SwitchPreference
+        android:defaultValue="true"
+        android:key="system_power"
+        android:title="System ON/OFF"
+        android:summary="Turn the thermostat on/off." />
+
+    <PreferenceCategory
+        android:title="Application Settings">
+
+        <SwitchPreference
+            android:key="test_mode"
+            android:title="Test Mode"
+            android:summary="Toggle Application test mode." />
+
+        <EditTextPreference
+            android:key="system_ip"
+            android:title="System Address"
+            android:summary="The IP Address of the thermostat."
+            android:dialogTitle="Enter IP Address"
+            android:inputType="text"/>
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="System Settings"
+        android:dependency="system_power">
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
