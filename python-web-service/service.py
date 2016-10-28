@@ -1,14 +1,14 @@
 import web
 import os
-import glob
-import time
 import redis
+import jsonpickle
 
 urls = (
     '/', 'Index',
     '/power', 'PowerController',
     '/temp', 'TempController',
-    '/mode', 'ModeController'
+    '/mode', 'ModeController',
+    '/settings', 'SettingsController'
 )
 
 r = redis.Redis(host='127.0.0.1', port=6379)
@@ -16,24 +16,65 @@ template_dir = os.path.abspath(os.path.dirname(__file__)) + '/templates'
 renderer = web.template.render(template_dir)
 application = web.application(urls, globals())
 
+setting_keys = [
+    'system_power',
+    'system_mode',
+    'system_threshold',
+    'system_variance'
+]
+report_keys = [
+    'system_power',
+    'system_mode',
+    'system_threshold',
+    'system_variance',
+    'system_state',
+    'fan_status',
+    'ac_status',
+    'heat_status',
+    'hp_status',
+    'temp_f',
+    'temp_c'
+]
+
 
 class BaseController(object):
+    _post_data = None
+
+    @property
+    def post_data(self):
+        if self._post_data is None:
+            data = web.data()
+            if data is not None:
+                self._post_data = jsonpickle.decode(data)
+        return self._post_data
+
     def status_response(self):
-        curr_temp = int(float(r.get('temp_f')))
-        system_threshold = int(r.get('system_threshold'))
-        system_power = r.get('system_power')
-        system_mode = r.get('system_mode')
-        system_state = r.get('system_state')
-        fan_status = r.get('fan_status')
-        ac_status = r.get('ac_status')
-        hp_status = r.get('hp_status')
-        heat_status = r.get('heat_status')
-        return '{"currentTemp": %s, "systemThreshold": %s, "systemPower": %s, "systemMode": %s, "systemState": %s, "fanStatus": %s, "acStatus": %s, "hpStatus": %s, "heatStatus": %s}' % (curr_temp, system_threshold, system_power, system_mode, system_state, fan_status, ac_status, hp_status, heat_status)
+        rvalue = ""
+        for setting in report_keys:
+            rvalue += '"%s": %s,' % (self.to_camel_case(setting), r.get(setting))
+        return '{%s}' % rvalue[:-1]
+
+    @staticmethod
+    def to_camel_case(name):
+        components = name.split('_')
+        return components[0] + ''.join(x.title() for x in components[1:])
 
 
 class Index(BaseController):
     def GET(self):
-        return self.status_response() 
+        return self.status_response()
+
+
+class SettingsController(BaseController):
+    setting_keys = ['system_power', 'system_mode', 'system_threshold', 'system_variance']
+
+    def POST(self):
+        settings = self.post_data
+        for key in self.setting_keys:
+            if key in settings:
+                print key, type(settings[key])
+                r.set(key, settings[key])
+        return self.status_response()
 
 
 class PowerController(BaseController):

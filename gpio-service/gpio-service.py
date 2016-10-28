@@ -131,10 +131,10 @@ def set_state(mode, state, power_saving):
             set_pins(fan=True)
             return SYSTEM_STATE_MANUAL_FAN
         elif mode == SYSTEM_MODE_AC:
-            set_pins(fan=True, ac=True)
+            set_pins(ac=True)
             return SYSTEM_STATE_MANUAL_AIR
         elif mode == SYSTEM_MODE_HEAT:
-            set_pins(fan=True, ac=True, pump=True, heat=True)
+            set_pins(fan=True, pump=True, heat=True)
             return SYSTEM_STATE_MANUAL_HEAT
         else:
             threshold = int(get_with_default('system_threshold', 70))
@@ -197,7 +197,8 @@ def set_state(mode, state, power_saving):
 
 
 def sample_temperature(threshold=70):
-    raw_temp = float(get_with_default('curr_temp', threshold))
+    system_variance = float(get_with_default('system_variance', 0))
+    raw_temp = float(get_with_default('curr_temp', threshold)) + system_variance
     last_temp = float(get_with_default('last_temp', raw_temp))
     delta_temp = last_temp - raw_temp
 
